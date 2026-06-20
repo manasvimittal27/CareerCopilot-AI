@@ -1,0 +1,6 @@
+streamlit
+pdfplumber
+pydantic
+langchain-groq
+langchain-core
+python-dotenv
