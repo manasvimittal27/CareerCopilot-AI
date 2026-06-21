@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import os
+from database import init_db, get_user, update_user_profile, deduct_credits
 
 # Import the core engines you built this week
 from parser_service import parse_resume
@@ -9,6 +10,8 @@ from tailor_engine import tailor_resume_profile
 from outreach_generator import generate_outreach_suite
 
 # Set page configuration
+init_db()
+
 st.set_page_config(
     page_title="CareerCopilot AI",
     page_icon="💼",
@@ -35,7 +38,7 @@ with st.sidebar:
         with open("temp_uploaded_resume.pdf", "wb") as f:
             f.write(uploaded_file.getbuffer())
         
-        if st.button("⚡ Parse & Analyze Resume"):
+        if st.button("⚡ Parse & Analyze Resume", key="btn_parse_resume"):
             with st.spinner("ATS Parser extracting structured profile..."):
                 try:
                     profile = parse_resume("temp_uploaded_resume.pdf")
@@ -44,9 +47,9 @@ with st.sidebar:
                 except Exception as e:
                     st.error(f"Parsing failed: {e}")
                     
-    # Clean up local file if it exists
-    if os.path.exists("temp_uploaded_resume.pdf"):
-        os.remove("temp_uploaded_resume.pdf")
+        # Clean up local file safely inside the block where it gets generated
+        if os.path.exists("temp_uploaded_resume.pdf"):
+            os.remove("temp_uploaded_resume.pdf")
 
     st.markdown("---")
     
@@ -91,7 +94,7 @@ else:
         if not job_description:
             st.warning("Please paste a target Job Description in the sidebar to run the evaluation.")
         else:
-            if st.button("📈 Calculate Job Match Fit"):
+            if st.button("📈 Calculate Job Match Fit", key="btn_job_match"):
                 with st.spinner("Analyzing skill matrices and alignment scores..."):
                     try:
                         # Convert profile dict back to JSON string for the engine
@@ -114,7 +117,8 @@ else:
                         with col_right:
                             st.error("### Missing Critical Skills/Gaps")
                             for gap in scorecard.missing_critical_skills:
-                                st.markdown(f"* {gap}")
+                                w_gap = f"* {gap}"
+                                st.markdown(w_gap)
                                 
                     except Exception as e:
                         st.error(f"Evaluation pipeline failed: {e}")
@@ -125,7 +129,7 @@ else:
         if not job_description:
             st.warning("Please paste a target Job Description in the sidebar to generate optimizations.")
         else:
-            if st.button("🔧 Generate Custom Optimizations"):
+            if st.button("🔧 Generate Custom Optimizations", key="btn_tailor_resume"):
                 with st.spinner("Rewriting experience vectors for alignment..."):
                     try:
                         profile_str = json.dumps(st.session_state.parsed_profile)
@@ -150,7 +154,7 @@ else:
         if not job_description or not company_name:
             st.warning("Please provide both a Company Name and Job Description in the sidebar to script outreach assets.")
         else:
-            if st.button("🚀 Compose Conversion Outreach Suite"):
+            if st.button("🚀 Compose Conversion Outreach Suite", key="btn_outreach"):
                 with st.spinner("Generating custom social scripts..."):
                     try:
                         profile_str = json.dumps(st.session_state.parsed_profile)
